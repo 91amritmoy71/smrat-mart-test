@@ -1,0 +1,11 @@
+/* src/index.css */
+body {
+  background-color: #f8f9fa;
+}
+.card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.card-text {
+  font-size: 0.85rem;
+}
