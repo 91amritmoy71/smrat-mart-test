@@ -13,14 +13,22 @@ const handleLogin = async (e) => {
   try {
     const { data } = await axios.post("http://localhost:5600/api/signin", { email, password });
     if (data.success) {
+      // Store both token and user data
+      localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      navigate("/");
+      
+      // Redirect based on user role
+      if (data.user.role === 'ADMIN') {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/");
+      }
     } else {
       alert(data.message);
     }
   } catch (err) {
     console.log(err);
-    alert("Login failed");
+    alert(err.response?.data?.message || "Login failed");
   }
 };
 

@@ -4,6 +4,7 @@ const userController = require("../controllers/user/userSignUp");
 const userSignIN = require("../controllers/user/userLogIn");
 const userLogout = require("../controllers/user/userLogOut");
 const authMiddleware = require("../middleware/authMiddleware");
+const adminRoutes = require("./adminRoutes");
 
 router.post("/signup", userController.createUser);
 router.get("/user", userController.getAllUsers);
@@ -18,5 +19,8 @@ router.get("/userlogout",userLogout);
 router.get('/profile', authMiddleware, (req, res) => {
   res.json({ message: "Welcome to protected route", user: req.user });
 });
+
+// Admin routes
+router.use('/admin', adminRoutes);
 
 module.exports = router;

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import logo from '../assets/logo.png';
+import AdminAccess from './AdminAccess';
 
 const Header = () => {
   return (
@@ -90,6 +91,8 @@ const Header = () => {
                   <li><Link to="/orders" className="dropdown-item">Orders</Link></li>
                 </ul>
               </div>
+
+              <AdminAccess />
             </div>
 
           </div>
