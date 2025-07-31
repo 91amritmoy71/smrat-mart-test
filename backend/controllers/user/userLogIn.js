@@ -11,9 +11,9 @@ module.exports = async (req, res) => {
     if (!user || !(await bcrypt.compare(password, user.password)))
       throw new Error("Invalid email or password");
 
-    const token = jwt.sign({ _id: user._id, email }, process.env.JWT, { expiresIn: '8h' });
+    const token = jwt.sign({ _id: user._id, email }, process.env.JWT, { expiresIn: '3h' });
 
-    res.cookie("token", token, { httpOnly: true, secure: true }).status(200).json({
+    res.cookie("token", token, { httpOnly: true}).status(200).json({
       message: "Login successful",
       data: token,
       success: true,

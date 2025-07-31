@@ -5,20 +5,38 @@ const bcrypt = require("bcryptjs");
 const createUser = async (req, res) => {
   try {
     const { email, password, name } = req.body;
-    if (!email || !password || !name) throw new Error("All fields are required");
+    if (!email || !password || !name) {
+      return res.status(400).json({ message: "All fields are required", success: false, error: true });
+    }
 
-    if (await userModel.findOne({ email })) throw new Error("User already exists");
+    const existingUser = await userModel.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists", success: false, error: true });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await new userModel({
       name,
       email,
-      password: bcrypt.hashSync(password, 10),
+      password: hashedPassword,
       role: "GENERAL",
     }).save();
 
-    res.status(201).json({ data: user, success: true, error: false, message: "User created" });
+    const { password: _, ...userWithoutPassword } = user.toObject(); // remove password from response
+
+    res.status(201).json({
+      data: userWithoutPassword,
+      success: true,
+      error: false,
+      message: "User created",
+    });
   } catch (err) {
-    res.json({ message: err.message || err, error: true, success: false });
+    res.status(500).json({
+      message: err.message || "Something went wrong",
+      error: true,
+      success: false,
+    });
   }
 };
 
@@ -26,9 +44,18 @@ const createUser = async (req, res) => {
 const getAllUsers = async (req, res) => {
   try {
     const users = await userModel.find({}, { password: 0 });
-    res.status(200).json({ data: users });
+    res.status(200).json({
+      data: users,
+      message: "Users fetched successfully",
+      success: true,
+      error: false,
+    });
   } catch (err) {
-    res.status(500).json({ message: err.message || "Something went wrong", success: false, error: true });
+    res.status(500).json({
+      message: err.message || "Something went wrong",
+      success: false,
+      error: true,
+    });
   }
 };
 
@@ -40,15 +67,50 @@ const updateUser = async (req, res) => {
 
     const updateData = {};
     if (name) updateData.name = name;
-    if (email) updateData.email = email;
-    if (password) updateData.password = bcrypt.hashSync(password, 10);
 
-    const updatedUser = await userModel.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
-    if (!updatedUser) throw new Error("User not found");
+    if (email) {
+      const existingUser = await userModel.findOne({ email });
+      if (existingUser && existingUser._id.toString() !== id) {
+        return res.status(400).json({
+          message: "Email already in use",
+          success: false,
+          error: true,
+        });
+      }
+      updateData.email = email;
+    }
 
-    res.json({ data: updatedUser, success: true, error: false, message: "User updated" });
+    if (password) {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    const updatedUser = await userModel.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        message: "User not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    const { password: _, ...userWithoutPassword } = updatedUser.toObject();
+
+    res.status(200).json({
+      data: userWithoutPassword,
+      message: "User updated",
+      success: true,
+      error: false,
+    });
   } catch (err) {
-    res.status(400).json({ message: err.message || err, success: false, error: true });
+    res.status(400).json({
+      message: err.message || "Something went wrong",
+      success: false,
+      error: true,
+    });
   }
 };
 
@@ -57,16 +119,31 @@ const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
     const deleted = await userModel.findByIdAndDelete(id);
-    if (!deleted) throw new Error("User not found");
+    if (!deleted) {
+      return res.status(404).json({
+        message: "User not found",
+        success: false,
+        error: true,
+      });
+    }
 
-    res.json({ data: deleted, success: true, error: false, message: "User deleted" });
+    const { password: _, ...userWithoutPassword } = deleted.toObject();
+
+    res.status(200).json({
+      data: userWithoutPassword,
+      message: "User deleted",
+      success: true,
+      error: false,
+    });
   } catch (err) {
-    res.status(400).json({ message: err.message || err, success: false, error: true });
+    res.status(400).json({
+      message: err.message || "Something went wrong",
+      success: false,
+      error: true,
+    });
   }
 };
 
-
-// Export All Controllers
 module.exports = {
   createUser,
   getAllUsers,
